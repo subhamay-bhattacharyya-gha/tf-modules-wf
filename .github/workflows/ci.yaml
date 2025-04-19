@@ -7,6 +7,12 @@ description: |
 
 on:
   workflow_call:
+    inputs:
+      tflint-ver:
+        description: 'Specifies version of TFLint to use. e.g: v0.52.0'
+        required: false
+        type: string
+        default: v0.52.0
 
 permissions:
   contents: write
@@ -32,12 +38,49 @@ jobs:
   tf-lint:
     name: Terraform Lint
     runs-on: ubuntu-latest
-    needs: tf-fmt
     steps:
       - name: Git checkout
         id: git-checkout
         uses: actions/checkout@v4
 
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4.1.0
+      #   with:
+      #     node-version: '20'
+
+      # - uses: actions/cache@v3.0.11
+      #   id: cache-plugin-dir
+      #   name: Cache plugin dir
+      #   with:
+      #     path: ~/.tflint.d/plugins
+      #     key: tflint-${{ hashFiles('.tflint.hcl') }}
+
+      # - uses: terraform-linters/setup-tflint@v4
+      #   name: Setup TFLint
+      #   id: setup-tflint
+      #   with:
+      #     tflint_version: ${{ inputs.tflint-ver }}
+
+      # - name: Show version
+      #   id: show-tflint-version
+      #   run: tflint --version
+
+      # - name: Init TFLint
+      #   id: init-tflint
+      #   run: tflint --init
+      #   env:
+      #     GITHUB_TOKEN: ${{ github.token }}
+
+      # - name: Run TFLint
+      #   id: tflint
+      #   run: tflint -f compact
+
+      # - name: TFLint Status
+      #   id: tflint-status
+      #   if: steps.tflint.outcome == 'failure'
+      #   run: exit 1
+
+      ###############################################################
       # - name: Setup Terraform
       #   uses: hashicorp/setup-terraform@v2
 
@@ -54,11 +97,11 @@ jobs:
       #   run: |
       #     echo '### TFLint Results' >> $GITHUB_STEP_SUMMARY
       #     cat tflint.log >> $GITHUB_STEP_SUMMARY
+      ###############################################################
 
   tf-validate:
     name: Terraform Validate
     runs-on: ubuntu-latest
-    needs: tf-lint
     steps:
       - name: Git checkout
         id: git-checkout
@@ -88,7 +131,7 @@ jobs:
   tf-plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
-    needs: tf-validate
+    needs: [tf-fmt, tf-lint, tf-validate]
     steps:
       - name: Git checkout
         id: git-checkout
