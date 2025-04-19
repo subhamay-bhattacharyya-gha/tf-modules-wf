@@ -312,7 +312,7 @@ jobs:
   notify:
     name: Send Notification
     if: always()
-    needs: [tf-fmt, tf-lint, tf-validate, tf-plan, checkov-iac-scan, terra-test, tf-apply, tf-destroy]
+    needs: [create-build]
     runs-on: ubuntu-latest
     steps:
       - name: Git checkout
