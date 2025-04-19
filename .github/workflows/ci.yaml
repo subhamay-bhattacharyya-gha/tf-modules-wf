@@ -1,0 +1,255 @@
+name: CloudFormation CI Pipeine (Reusable)
+
+description: |
+  This is a reusable GitHub Actions workflow for CI/CD of Terraform modules.
+  It includes linting, validation, planning, security scanning, testing, and deployment.
+  The workflow is triggered on pull requests and can be reused in other workflows.  
+
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+  id-token: write
+  actions: write
+  deployments: write
+
+jobs:
+  tf-fmt:
+    name: Terraform Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4@e5f36d523f63a403de144e63e09c5b86719a8c4e
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2@4e6c2fce4ef17eb8624a5e8adf91793f23fd7ad3
+
+      - name: Run terraform fmt
+        run: terraform fmt -check -recursive
+
+  tf-lint:
+    name: Terraform Lint
+    runs-on: ubuntu-latest
+    needs: tf-fmt
+    steps:
+      - uses: actions/checkout@v4@e5f36d523f63a403de144e63e09c5b86719a8c4e
+
+      # - name: Setup Terraform
+      #   uses: hashicorp/setup-terraform@v2@4e6c2fce4ef17eb8624a5e8adf91793f23fd7ad3
+
+      # - name: Install tflint
+      #   run: |
+      #     curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+      # - name: Run tflint
+      #   run: |
+      #     tflint --init
+      #     tflint | tee tflint.log
+
+      # - name: Upload TFLint Summary
+      #   run: |
+      #     echo '### TFLint Results' >> $GITHUB_STEP_SUMMARY
+      #     cat tflint.log >> $GITHUB_STEP_SUMMARY
+
+  tf-validate:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+    needs: tf-lint
+    steps:
+      - uses: actions/checkout@v4@e5f36d523f63a403de144e63e09c5b86719a8c4e
+      - uses: hashicorp/setup-terraform@v2@4e6c2fce4ef17eb8624a5e8adf91793f23fd7ad3
+
+      # - name: Cache Terraform Init
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: .terraform
+      #     key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-terraform-
+
+      # - name: Init and Validate
+      #   run: |
+      #     terraform init
+      #     terraform validate | tee tfvalidate.log
+
+      # - name: Upload Terraform Validate Summary
+      #   run: |
+      #     echo '### Terraform Validate Results' >> $GITHUB_STEP_SUMMARY
+      #     cat tfvalidate.log >> $GITHUB_STEP_SUMMARY
+
+  tf-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: tf-validate
+    steps:
+      - uses: actions/checkout@v4@e5f36d523f63a403de144e63e09c5b86719a8c4e
+      - uses: hashicorp/setup-terraform@v2@4e6c2fce4ef17eb8624a5e8adf91793f23fd7ad3
+
+      # - name: Cache Terraform Init
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: .terraform
+      #     key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-terraform-
+
+      # - name: Terraform Plan
+      #   run: |
+      #     terraform init
+      #     terraform plan -no-color -out=tfplan > tfplan.log
+
+      # - name: Upload Terraform Plan Summary
+      #   run: |
+      #     echo '### Terraform Plan Summary' >> $GITHUB_STEP_SUMMARY
+      #     echo '| Change | Description |' >> $GITHUB_STEP_SUMMARY
+      #     echo '|--------|-------------|' >> $GITHUB_STEP_SUMMARY
+      #     grep -E '^ {2}[+~\-]' tfplan.log | sed -E 's/^ {2}\+(.*)/| 🟢 Add |           echo '### Terraform Plan Summary' >> $GITHUB_STEP_SUMMARY
+      #     echo '| Change | Description |' >> $GITHUB_STEP_SUMMARY
+      #     echo '|--------|-------------|' >> $GITHUB_STEP_SUMMARY
+      #     grep -E '^ {2}[+-]' tfplan.log | sed -E 's/^ {2}(.)(.*)/| \1 | \2 |/' >> $GITHUB_STEP_SUMMARY
+
+  checkov-iac-scan:
+    name: Checkov Scan
+    runs-on: ubuntu-latest
+    needs: tf-plan
+    steps:
+      - uses: actions/checkout@v4@e5f36d523f63a403de144e63e09c5b86719a8c4e |/' >> $GITHUB_STEP_SUMMARY
+
+      # - name: Upload Terraform Plan Log
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: tfplan-log
+      #     path: tfplan.log
+      # - name: Run Checkov
+      #   uses: bridgecrewio/checkov-action@v12
+      #   with:
+      #     directory: .
+      #     quiet: true
+
+  terra-test:
+    name: Terratest
+    runs-on: ubuntu-latest
+    needs: checkov-iac-scan
+    steps:
+      - uses: actions/checkout@v4@e5f36d523f63a403de144e63e09c5b86719a8c4e
+
+      # - name: Setup Go
+      #   uses: actions/setup-go@v4@79a636f8011d92f5578e3b9b372010d6a380dc0f
+      #   with:
+      #     go-version: "1.21"
+
+      # - name: Cache Go Modules
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: |
+      #       ~/.cache/go-build
+      #       ~/go/pkg/mod
+      #     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-go-
+
+      # - name: Install Terraform
+      #   uses: hashicorp/setup-terraform@v2@4e6c2fce4ef17eb8624a5e8adf91793f23fd7ad3
+
+      # - name: Run Terratest
+      #   run: |
+      #     cd test
+      #     go mod tidy
+      #     go test -v -cover -coverprofile=coverage.out -timeout 30m
+
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v3
+      #   with:
+      #     files: coverage.out
+      #     flags: unittests
+      #     name: terraform-module
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  tf-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: terra-test
+    steps:
+      - uses: actions/checkout@v4@e5f36d523f63a403de144e63e09c5b86719a8c4e
+      - uses: hashicorp/setup-terraform@v2@4e6c2fce4ef17eb8624a5e8adf91793f23fd7ad3
+
+      # - name: Cache Terraform Init
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: .terraform
+      #     key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-terraform-
+
+      # - name: Terraform Apply
+      #   run: |
+      #     terraform init
+      #     terraform apply -no-color -auto-approve | tee tfapply.log
+
+      # - name: Upload Terraform Apply Summary
+      #   run: |
+      #     echo '### Terraform Apply Output' >> $GITHUB_STEP_SUMMARY
+      #     echo '| Action | Resource |' >> $GITHUB_STEP_SUMMARY
+      #     echo '|--------|----------|' >> $GITHUB_STEP_SUMMARY
+      #     grep -E '^ {2}[+~\-]' tfapply.log | sed -E 's/^ {2}\+(.*)/| 🟢 Add |           echo '### Terraform Apply Output' >> $GITHUB_STEP_SUMMARY
+      #     echo '```' >> $GITHUB_STEP_SUMMARY
+      #     cat tfapply.log >> $GITHUB_STEP_SUMMARY
+      #     echo '```' >> $GITHUB_STEP_SUMMARY
+
+  tf-destroy:
+    name: Terraform Destroy
+    runs-on: ubuntu-latest
+    needs: tf-apply
+    steps:
+      - uses: actions/checkout@v4@e5f36d523f63a403de144e63e09c5b86719a8c4e
+      # - uses: hashicorp/setup-terraform@v2@4e6c2fce4ef17eb8624a5e8adf91793f23fd7ad3 |/' >> $GITHUB_STEP_SUMMARY
+
+      # - name: Upload Terraform Apply Log
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: tfapply-log
+      #     path: tfapply.log
+      # - name: Cache Terraform Init
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: .terraform
+      #     key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-terraform-
+
+      # - name: Terraform Destroy
+      #   run: |
+      #     terraform init
+      #     terraform destroy -auto-approve
+
+  notify:
+    name: Slack Notification and Security Scan
+    if: always()
+    needs: [tf-fmt, tf-lint, tf-validate, tf-plan, checkov-iac-scan, terra-test, tf-apply, tf-destroy]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4@e5f36d523f63a403de144e63e09c5b86719a8c4e
+
+      # - name: Security Scan with Scorecard
+      #   uses: ossf/scorecard-action@v2
+      #   with:
+      #     results_file: results.sarif
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Upload SARIF to GitHub Security
+      #   uses: github/codeql-action/upload-sarif@v2
+      #   with:
+      #     sarif_file: results.sarif
+
+      # - name: Notify Slack
+      #   uses: slackapi/slack-github-action@v1.25.0
+      #   with:
+      #     payload: |
+      #       {
+      #         "text": "*Terraform Module CI* finished with status: `${{ job.status }}` for `${{ github.workflow }}` on `${{ github.ref_name }}`"
+      #       }
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
