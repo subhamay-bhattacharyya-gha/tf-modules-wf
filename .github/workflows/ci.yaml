@@ -8,6 +8,11 @@ description: |
 on:
   workflow_call:
     inputs:
+      terraform-ver:
+        description: 'Specifies version of Terraform version e.g: 1.4'
+        required: false
+        type: number
+        default: 1.4
       tflint-ver:
         description: 'Specifies version of TFLint to use. e.g: v0.52.0'
         required: false
@@ -27,13 +32,16 @@ jobs:
     steps:
       - name: Git checkout
         id: git-checkout
-        uses: actions/checkout@${{ vars.GIT_CHECKOUT_VERSION }}
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
     
 
-      # - name: Setup Terraform
-      #   uses: hashicorp/setup-terraform@v2
+      - name: Install and Cache Terraform Plugin
+        uses: subhamay-bhattacharyya-gha/terraform-plugin-action@feature/SB-0001-initial-release
+        with:
+          tf-version: 1.4
+          caching: true
 
       # - name: Run terraform fmt
       #   run: terraform fmt -check -recursive
