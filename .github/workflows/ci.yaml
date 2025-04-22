@@ -213,7 +213,7 @@ jobs:
   tf-plan:
     name: TF Plan ⛔️
     runs-on: ubuntu-latest
-    needs: [tf-fmt-check, tf-fmt-fix, tf-fmt-comment, tf-validate]
+    needs: [tf-fmt-fix, tf-fmt-comment, tf-validate, tf-lint]
     steps:
       - name: Git checkout
         id: git-checkout
@@ -248,7 +248,7 @@ jobs:
   checkov-iac-scan:
     name: Checkov Scan ⛔️
     runs-on: ubuntu-latest
-    needs: [tf-fmt-check, tf-fmt-fix, tf-fmt-comment, tf-validate]
+    needs: [tf-fmt-fix, tf-fmt-comment, tf-validate, tf-lint]
     steps:
       - name: Git checkout
         id: git-checkout
