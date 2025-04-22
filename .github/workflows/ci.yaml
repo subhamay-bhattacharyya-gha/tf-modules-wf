@@ -18,7 +18,11 @@ on:
         required: false
         type: string
         default: v0.52.0
-
+      environment:
+        description: "Environment to deploy to (e.g., dev, prod)."
+        required: true
+        type: string
+        default: ci
 permissions:
   contents: write
   id-token: write
@@ -114,7 +118,7 @@ jobs:
         run: exit 1
 
   tf-validate:
-    name: TF Validate 🟡
+    name: TF Validate
     runs-on: ubuntu-latest
     steps:
       - name: Git checkout
@@ -164,32 +168,35 @@ jobs:
           fi
         shell: bash
         
-        
-
   tf-plan:
-    name: TF Plan ⛔️
+    name: TF Plan 🟡
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     needs: [tf-fmt-check, tf-lint, tf-validate ]
     steps:
       - name: Git checkout
         id: git-checkout
         uses: actions/checkout@v4
 
-      # - name: Setup Terraform
-      #   uses: hashicorp/setup-terraform@v2
+      - name: Configure AWS credentials from AWS account
+        id: aws-config
+        uses: aws-actions/configure-aws-credentials@v4.1.0
+        with:
+          role-to-assume: ${{ secrets.aws-role-arn }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: github-aws-terraform-oidc
 
-      # - name: Cache Terraform Init
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: .terraform
-      #     key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-terraform-
+      - name: Install and Cache Terraform Plugin
+        uses: subhamay-bhattacharyya-gha/terraform-plugin-action@feature/SB-0001-initial-release
+        with:
+          tf-version: 1.4
+          caching: true
 
-      # - name: Terraform Plan
-      #   run: |
-      #     terraform init
-      #     terraform plan -no-color -out=tfplan > tfplan.log
+      - name: Terraform Plan
+        run: |
+          terraform init
+          terraform plan -out=plan.tfplan -var-file=terraform.tfvars -no-color
+          terraform show -json plan.tfplan > plan.json
 
       # - name: Upload Terraform Plan Summary
       #   run: |
