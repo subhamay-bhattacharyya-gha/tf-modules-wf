@@ -27,7 +27,7 @@ permissions:
 
 jobs:
   tf-fmt-check:
-    name: TF Format Check ⛔️
+    name: TF Format Check
     runs-on: ubuntu-latest
     outputs:
       fmt_status: ${{ steps.fmt-check.outputs.fmt_status }}
@@ -56,7 +56,7 @@ jobs:
             cat fmt_diff.txt >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
-        continue-on-error: true
+        continue-on-error: false
 
       - name: Upload fmt diff artifact
         if: steps.fmt-check.outputs.fmt_status == 'dirty'
@@ -66,49 +66,54 @@ jobs:
           path: fmt_diff.txt
 
   tf-lint:
-    name: TF Lint ⛔️
+    name: TF Lint 🟡
     runs-on: ubuntu-latest
     steps:
       - name: Git checkout
         id: git-checkout
         uses: actions/checkout@v4
 
-      # - name: Setup Node.js
-      #   uses: actions/setup-node@v4.1.0
-      #   with:
-      #     node-version: '20'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: '20'
 
-      # - uses: actions/cache@v3.0.11
-      #   id: cache-plugin-dir
-      #   name: Cache plugin dir
-      #   with:
-      #     path: ~/.tflint.d/plugins
-      #     key: tflint-${{ hashFiles('.tflint.hcl') }}
+      - uses: actions/cache@v3.0.11
+        id: cache-plugin-dir
+        name: Cache plugin dir
+        with:
+          path: ~/.tflint.d/plugins
+          key: tflint-${{ hashFiles('.tflint.hcl') }}
 
-      # - uses: terraform-linters/setup-tflint@v4
-      #   name: Setup TFLint
-      #   id: setup-tflint
-      #   with:
-      #     tflint_version: ${{ inputs.tflint-ver }}
+      - uses: terraform-linters/setup-tflint@v4
+        name: Setup TFLint
+        id: setup-tflint
+        with:
+          tflint_version: ${{ inputs.tflint-ver }}
 
-      # - name: Show version
-      #   id: show-tflint-version
-      #   run: tflint --version
+      - name: Show version
+        id: show-tflint-version
+        run: tflint --version
 
-      # - name: Init TFLint
-      #   id: init-tflint
-      #   run: tflint --init
-      #   env:
-      #     GITHUB_TOKEN: ${{ github.token }}
+      - name: Init TFLint
+        id: init-tflint
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
-      # - name: Run TFLint
-      #   id: tflint
-      #   run: tflint -f compact
+      - name: Run TFLint
+        id: tflint
+        run: tflint | tee tflint.log
 
-      # - name: TFLint Status
-      #   id: tflint-status
-      #   if: steps.tflint.outcome == 'failure'
-      #   run: exit 1
+      - name: Upload TFLint Summary
+        run: |
+          echo '### TFLint Results' >> $GITHUB_STEP_SUMMARY
+          cat tflint.log >> $GITHUB_STEP_SUMMARY
+          
+      - name: TFLint Status
+        id: tflint-status
+        if: steps.tflint.outcome == 'failure'
+        run: exit 1
 
       ###############################################################
       # - name: Setup Terraform
