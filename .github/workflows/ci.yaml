@@ -78,13 +78,6 @@ jobs:
         with:
           node-version: '20'
 
-      - uses: actions/cache@v3.0.11
-        id: cache-plugin-dir
-        name: Cache plugin dir
-        with:
-          path: ~/.tflint.d/plugins
-          key: tflint-${{ hashFiles('.tflint.hcl') }}
-
       - uses: terraform-linters/setup-tflint@v4
         name: Setup TFLint
         id: setup-tflint
@@ -109,7 +102,7 @@ jobs:
         run: |
           echo '### TFLint Results' >> $GITHUB_STEP_SUMMARY
           cat tflint.log >> $GITHUB_STEP_SUMMARY
-          
+
       - name: TFLint Status
         id: tflint-status
         if: steps.tflint.outcome == 'failure'
