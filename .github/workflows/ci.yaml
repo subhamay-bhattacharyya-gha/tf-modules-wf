@@ -65,58 +65,6 @@ jobs:
           name: terraform-fmt-diff
           path: fmt_diff.txt
 
-  tf-fmt-fix:
-    name: Auto Fix Format 🛠️
-    needs: tf-fmt-check
-    if: needs.tf-fmt-check.outputs.fmt_status == 'dirty'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Git checkout
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install Terraform
-        uses: subhamay-bhattacharyya-gha/terraform-plugin-action@feature/SB-0001-initial-release
-        with:
-          tf-version: 1.4
-          caching: true
-
-      - name: Run terraform fmt
-        run: terraform fmt -recursive
-
-      - name: Commit and Push Changes
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add .
-          git commit -m "chore(terraform): auto format via GitHub Actions" || echo "No changes to commit"
-          git push
-
-  tf-fmt-comment:
-    name: Comment PR with fmt diff 💬
-    needs: tf-fmt-check
-    if: ${{ github.event_name == 'pull_request' && needs.tf-fmt-check.outputs.fmt_status == 'dirty' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: terraform-fmt-diff
-
-      - name: Comment on PR
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const diff = fs.readFileSync('fmt_diff.txt', 'utf8');
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `\u26a0\ufe0f Terraform format issues found:\n\n\u60e8\u2022\u2022\u2022\u2022\n\n\\`\`\`diff\n${diff}\n\\`\`\`\n\nRun \`terraform fmt\` to fix.`
-            });
   tf-lint:
     name: TF Lint ⛔️
     runs-on: ubuntu-latest
@@ -213,7 +161,7 @@ jobs:
   tf-plan:
     name: TF Plan ⛔️
     runs-on: ubuntu-latest
-    needs: [tf-fmt-check, tf-fmt-fix, tf-fmt-comment, tf-lint, tf-validate ]
+    needs: [tf-fmt-check, tf-lint, tf-validate ]
     steps:
       - name: Git checkout
         id: git-checkout
@@ -248,7 +196,7 @@ jobs:
   checkov-iac-scan:
     name: Checkov Scan ⛔️
     runs-on: ubuntu-latest
-    needs: [tf-fmt-check, tf-fmt-fix, tf-fmt-comment, tf-lint, tf-validate ]
+    needs: [tf-fmt-check, tf-lint, tf-validate ]
     steps:
       - name: Git checkout
         id: git-checkout
