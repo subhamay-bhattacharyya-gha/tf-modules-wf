@@ -100,12 +100,12 @@ jobs:
 
       - name: Upload TFLint Summary
         run: |
-          if [ -f tflint.log ]; then
+          if [ -s tflint.log ]; then
             echo '### TFLint Results' >> $GITHUB_STEP_SUMMARY
             cat tflint.log >> $GITHUB_STEP_SUMMARY
           else
             echo '### TFLint Results' >> $GITHUB_STEP_SUMMARY
-            echo 'No TFLint results available.' >> $GITHUB_STEP_SUMMARY
+            echo '✅ TF Lint passed.' >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: TFLint Status
