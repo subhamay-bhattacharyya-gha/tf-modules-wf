@@ -135,7 +135,29 @@ jobs:
       - name: Upload Terraform Validate Summary
         run: |
           echo '### Terraform Validate Results' >> $GITHUB_STEP_SUMMARY
-          cat validate_output.json >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+      
+          VALIDATE_JSON=$(cat validate_output.json)
+      
+          VALID=$(echo "$VALIDATE_JSON" | jq -r '.valid')
+          ERROR_COUNT=$(echo "$VALIDATE_JSON" | jq -r '.error_count')
+          WARNING_COUNT=$(echo "$VALIDATE_JSON" | jq -r '.warning_count')
+      
+          echo '| Valid | Errors | Warnings |' >> $GITHUB_STEP_SUMMARY
+          echo '|-------|--------|----------|' >> $GITHUB_STEP_SUMMARY
+          echo "| $VALID | $ERROR_COUNT | $WARNING_COUNT |" >> $GITHUB_STEP_SUMMARY
+      
+          DIAG_COUNT=$(echo "$VALIDATE_JSON" | jq '.diagnostics | length')
+          if [ "$DIAG_COUNT" -gt 0 ]; then
+            echo '' >> $GITHUB_STEP_SUMMARY
+            echo '### Diagnostics' >> $GITHUB_STEP_SUMMARY
+            echo '' >> $GITHUB_STEP_SUMMARY
+            echo '| Severity | Summary |' >> $GITHUB_STEP_SUMMARY
+            echo '|----------|---------|' >> $GITHUB_STEP_SUMMARY
+            echo "$VALIDATE_JSON" | jq -r '.diagnostics[] | "| \(.severity) | \(.summary) |"' >> $GITHUB_STEP_SUMMARY
+          fi
+        shell: bash
+        
 
   tf-plan:
     name: TF Plan ⛔️
