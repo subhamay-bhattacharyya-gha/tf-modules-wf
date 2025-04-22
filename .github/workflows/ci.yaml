@@ -143,9 +143,15 @@ jobs:
           ERROR_COUNT=$(echo "$VALIDATE_JSON" | jq -r '.error_count')
           WARNING_COUNT=$(echo "$VALIDATE_JSON" | jq -r '.warning_count')
       
+          if [ "$VALID" == "true" ]; then
+            VALID_ICON="✅"
+          else
+            VALID_ICON="❌"
+          fi
+      
           echo '| Valid | Errors | Warnings |' >> $GITHUB_STEP_SUMMARY
           echo '|-------|--------|----------|' >> $GITHUB_STEP_SUMMARY
-          echo "| $VALID | $ERROR_COUNT | $WARNING_COUNT |" >> $GITHUB_STEP_SUMMARY
+          echo "| $VALID_ICON | $ERROR_COUNT | $WARNING_COUNT |" >> $GITHUB_STEP_SUMMARY
       
           DIAG_COUNT=$(echo "$VALIDATE_JSON" | jq '.diagnostics | length')
           if [ "$DIAG_COUNT" -gt 0 ]; then
@@ -157,6 +163,7 @@ jobs:
             echo "$VALIDATE_JSON" | jq -r '.diagnostics[] | "| \(.severity) | \(.summary) |"' >> $GITHUB_STEP_SUMMARY
           fi
         shell: bash
+        
         
 
   tf-plan:
