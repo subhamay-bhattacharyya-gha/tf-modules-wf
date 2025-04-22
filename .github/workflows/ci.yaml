@@ -130,12 +130,12 @@ jobs:
       - name: Init and Validate
         run: |
           terraform init
-          terraform validate | tee tfvalidate.log
+          terraform validate -json > validate_output.json
 
       - name: Upload Terraform Validate Summary
         run: |
           echo '### Terraform Validate Results' >> $GITHUB_STEP_SUMMARY
-          cat tfvalidate.log >> $GITHUB_STEP_SUMMARY
+          cat validate_output.json >> $GITHUB_STEP_SUMMARY
 
   tf-plan:
     name: TF Plan ⛔️
